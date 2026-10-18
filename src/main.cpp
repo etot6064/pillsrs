@@ -141,12 +141,14 @@ uint8_t c_stored = 0;
 uint8_t c_match;
 uint8_t animstate = 0;
 uint8_t top_piece = 0;
+uint8_t updboard = 2;
+uint8_t updsdbar = 2; //sidebar
+bool swapdraw = false;
 bool animflip = false;
 bool clearstate = 0;
 bool clearcheck = false;
 bool can_match = false;
 bool lose = false;
-bool updscr = true;
 bool in_menu = true;
 bool quit = false;
 
@@ -193,7 +195,8 @@ void switchto_menu() {
 	gfx_palette[flicker]  = gfx_palette[white];
 	sclgrid(menu_board);
 	setboard_menu();
-	updscr = true;
+	updboard = 2;
+	updsdbar = 2;
 }
 void switchto_game() {
 	timer_Disable(2);
@@ -207,7 +210,8 @@ void switchto_game() {
 	c_stored = c_rand;
 	sclgrid(board);
 	setboard_clear();
-	updscr = true;
+	updboard = 2;
+	updsdbar = 2;
 }
 
 void anim() {
@@ -234,7 +238,8 @@ void placed(bool a) {
 		clearstate = a;
 	}
 	if(top[a] == board && color[a][board-1] != flicker) {lose = true;}
-	updscr = true;
+	updboard = 2;
+	updsdbar = 2;
 }
 
 //flag!- main
@@ -305,16 +310,16 @@ int main(void) {
 			}
 			
 			if (kclear) {quit = true;}
-			else updown_loop(menu_selection, 3, 0, ddown, dup, updscr = true;)
+			else updown_loop(menu_selection, 3, 0, ddown, dup, updboard = 2;)
 			else switch (menu_selection) {
 				case 0: { //play
 					if (k2nd || kenter || kright) {switchto_game();}
 				break;}
 				case 1: { //board
-					updown(board, board_upper, board_lower, dright, dleft, updscr = true;)
+					updown(board, board_upper, board_lower, dright, dleft, updboard = 2;)
 				break;}
 				case 2: { //colors
-					updown(colors, colors_upper, colors_lower, dright, dleft, updscr = true;)
+					updown(colors, colors_upper, colors_lower, dright, dleft, updboard = 2;)
 				break;}
 				case 3: { //quit
 					if (k2nd || kenter || kright) {quit = true;}
@@ -330,7 +335,7 @@ int main(void) {
 				uint24_t c_temp = c_stored;
 				c_stored = c_current;
 				c_current = c_temp;
-				updscr = true;
+				updsdbar = 2;
 			}
 			else if (kright && !animstate) {placed(r);}
 			else if (kleft && !animstate) {placed(l);}
@@ -379,18 +384,47 @@ int main(void) {
 				anim();
 			}
 			if(top[a] == 0 && top[b] == 0) {anim();}
-			updscr = true;
+			updboard = 2;
 		}
 
 		//flag!- display
-		if (updscr) {
-			//always
+		if (updboard > 0) {
+			updboard--;
+			swapdraw = true;
 			drawboard();
-			gfx_SetColor(black);
-			gfx_FillRectangle_NoClip(240, 0, 4, 240);
+			#ifdef debug
+				gfx_SetTextConfig(gfx_text_clip);
+				for (uint24_t i = 0; i < board; i++) {
+					gfx_SetTextXY(0, g[i+1]+3);
+					gfx_PrintUInt(color[l][i], 0);
+					gfx_SetTextXY(g[i+1]+3, 0);
+					gfx_PrintUInt(color[r][i], 0);
+					gfx_SetTextXY(18, g[i+1]+3);
+					gfx_PrintUInt(len[l][i], 0);
+					gfx_SetTextXY(g[i+1]+3, 10);
+					gfx_PrintUInt(len[r][i], 0);
+				}
+				gfx_SetColor(black);
+				gfx_FillRectangle(0, g[top[l]]-2, 80, 4);
+				gfx_SetTextXY(84, g[top[l]]-4);
+				gfx_PrintUInt(top[l], 1);
+				gfx_FillRectangle(g[top[r]]-2, 0, 4, 80);
+				gfx_SetTextXY(g[top[r]]-4, 84);
+				gfx_PrintUInt(top[r], 1);
+				gfx_SetColor(firstcolor+9);
+				if (clearstate) {
+					gfx_FillRectangle(0, g[top_piece]-2, 80, 4);
+					gfx_SetTextXY(84, g[top_piece]-4);
+					gfx_PrintUInt(top_piece, 1);
+				} else {
+					gfx_FillRectangle(g[top_piece]-2, 0, 4, 80);
+					gfx_SetTextXY(g[top_piece]-4, 84);
+					gfx_PrintUInt(top_piece, 1);
+				}
+				gfx_SetTextConfig(gfx_text_noclip);
+			#endif
 
 			if (in_menu) {
-
 				//title
 				gfx_SetTextScale(2, 2);
 				for (uint24_t i = 0; i < sizeof(str_title)-1; i++) {
@@ -398,7 +432,6 @@ int main(void) {
 					gfx_PrintChar(str_title[i]);
 				}
 				gfx_SetTextScale(1, 1);
-
 
 				//make better when layout is finalized===================================
 				{//play
@@ -445,52 +478,27 @@ int main(void) {
 						{gfx_PrintString(str_select);}
 					gfx_PrintString(str_quit);
 				}
-				
 			}
-			else { //in game
+			else if (lose) {gfx_FillRectangle_NoClip(40, 40, 160, 160);}
+		}
+		if (updsdbar > 0) {
+			updsdbar--;
+			swapdraw = true;
+			gfx_SetColor(black);
+			gfx_FillRectangle_NoClip(240, 0, 4, 240);
+
+			if(!in_menu) { //in game
 				gfx_SetColor(c_next);
 				gfx_FillRectangle_NoClip(244, 0, 76, 40);
 				gfx_SetColor(c_current);
 				gfx_FillRectangle_NoClip(244, 40, 76, 120);
 				gfx_SetColor(c_stored);
 				gfx_FillRectangle_NoClip(244, 160, 76, 80);
-
-				#ifdef debug
-				gfx_SetTextConfig(gfx_text_clip);
-				for (uint24_t i = 0; i < board; i++) {
-					gfx_SetTextXY(0, g[i+1]+3);
-					gfx_PrintUInt(color[l][i], 0);
-					gfx_SetTextXY(g[i+1]+3, 0);
-					gfx_PrintUInt(color[r][i], 0);
-					gfx_SetTextXY(18, g[i+1]+3);
-					gfx_PrintUInt(len[l][i], 0);
-					gfx_SetTextXY(g[i+1]+3, 10);
-					gfx_PrintUInt(len[r][i], 0);
-				}
-				gfx_SetColor(black);
-				gfx_FillRectangle(0, g[top[l]]-2, 80, 4);
-				gfx_SetTextXY(84, g[top[l]]-4);
-				gfx_PrintUInt(top[l], 1);
-				gfx_FillRectangle(g[top[r]]-2, 0, 4, 80);
-				gfx_SetTextXY(g[top[r]]-4, 84);
-				gfx_PrintUInt(top[r], 1);
-				gfx_SetColor(firstcolor+9);
-				if (clearstate) {
-					gfx_FillRectangle(0, g[top_piece]-2, 80, 4);
-					gfx_SetTextXY(84, g[top_piece]-4);
-					gfx_PrintUInt(top_piece, 1);
-				} else {
-					gfx_FillRectangle(g[top_piece]-2, 0, 4, 80);
-					gfx_SetTextXY(g[top_piece]-4, 84);
-					gfx_PrintUInt(top_piece, 1);
-				}
-				gfx_SetTextConfig(gfx_text_noclip);
-				#endif
-
-				if (lose) {gfx_FillRectangle_NoClip(40, 40, 160, 160);}
 			}
+		}
+		if (swapdraw) {
+			swapdraw = false;
 			gfx_SwapDraw();
-			updscr = false;
 		}
 	}
 
