@@ -245,36 +245,38 @@ void placed(bool a) {
 //flag!- main
 int main(void) {
 	//setup
-	switchto_menu();
-	srandom(rtc_Time() + *TIMER_COUNT_ADDR(3));
-	kb_SetMode(MODE_0_IDLE);
-	kb_Scan();
-	for (uint24_t i = 1; i < 8; i++) {
-		kprev[i] = kb_Data[i];
-	}
-	gfx_Begin();
-	gfx_SetDrawBuffer();
-	gfx_SetTextConfig(gfx_text_noclip);
-	gfx_SetTextTransparentColor(transparent);
-	gfx_SetTextBGColor(transparent);
-	gfx_SetTextFGColor(black);
-	{ //palette
-		gfx_palette[0]  = c1555(31, 63, 31); //always white
-		gfx_palette[1]  = c1555(0,  0,  0 ); //always black
-		gfx_palette[2]  = 0;                 //transparent
-		gfx_palette[3]  = gfx_palette[white]; //flicker
-		gfx_palette[4]  = c1555(31, 0,  0 ); //c0  (red)
-		gfx_palette[5]  = c1555(0,  0,  31); //c1  (blue)
-		gfx_palette[6]  = c1555(0,  63, 0 ); //c2  (lime)
-		gfx_palette[7]  = c1555(31, 63, 0 ); //c3  (yellow)
-		gfx_palette[8]  = c1555(0,  63, 31); //c4  (cyan)
-		gfx_palette[9]  = c1555(31, 0,  31); //c5  (magenta)
-		gfx_palette[10] = c1555(31, 31, 0 ); //c6  (orange)
-		gfx_palette[11] = c1555(23, 0,  31); //c7  (purple)
-		gfx_palette[12] = c1555(15, 31, 15); //c8  (grey)
-		gfx_palette[13] = c1555(31, 0,  15); //c9  (amaranth) (my favorite :3)
-		gfx_palette[14] = c1555(15, 0,  0 ); //c10 (maroon)
-		gfx_palette[15] = c1555(0,  31, 0 ); //c11 (dark green)
+	{
+		switchto_menu();
+		srandom(rtc_Time() + *TIMER_COUNT_ADDR(3));
+		kb_SetMode(MODE_0_IDLE);
+		kb_Scan();
+		for (uint24_t i = 1; i < 8; i++) {
+			kprev[i] = kb_Data[i];
+		}
+		gfx_Begin();
+		gfx_SetDrawBuffer();
+		gfx_SetTextConfig(gfx_text_noclip);
+		gfx_SetTextTransparentColor(transparent);
+		gfx_SetTextBGColor(transparent);
+		gfx_SetTextFGColor(black);
+		{ //palette
+			gfx_palette[0]  = c1555(31, 63, 31); //always white
+			gfx_palette[1]  = c1555(0,  0,  0 ); //always black
+			gfx_palette[2]  = 0;                 //transparent
+			gfx_palette[3]  = gfx_palette[white]; //flicker
+			gfx_palette[4]  = c1555(31, 0,  0 ); //c0  (red)
+			gfx_palette[5]  = c1555(0,  0,  31); //c1  (blue)
+			gfx_palette[6]  = c1555(0,  63, 0 ); //c2  (lime)
+			gfx_palette[7]  = c1555(31, 63, 0 ); //c3  (yellow)
+			gfx_palette[8]  = c1555(0,  63, 31); //c4  (cyan)
+			gfx_palette[9]  = c1555(31, 0,  31); //c5  (magenta)
+			gfx_palette[10] = c1555(31, 31, 0 ); //c6  (orange)
+			gfx_palette[11] = c1555(23, 0,  31); //c7  (purple)
+			gfx_palette[12] = c1555(15, 31, 15); //c8  (grey)
+			gfx_palette[13] = c1555(31, 0,  15); //c9  (amaranth) (my favorite :3)
+			gfx_palette[14] = c1555(15, 0,  0 ); //c10 (maroon)
+			gfx_palette[15] = c1555(0,  31, 0 ); //c11 (dark green)
+		}
 	}
 	
 	//loop
@@ -392,37 +394,6 @@ int main(void) {
 			updboard--;
 			swapdraw = true;
 			drawboard();
-			#ifdef debug
-				gfx_SetTextConfig(gfx_text_clip);
-				for (uint24_t i = 0; i < board; i++) {
-					gfx_SetTextXY(0, g[i+1]+3);
-					gfx_PrintUInt(color[l][i], 0);
-					gfx_SetTextXY(g[i+1]+3, 0);
-					gfx_PrintUInt(color[r][i], 0);
-					gfx_SetTextXY(18, g[i+1]+3);
-					gfx_PrintUInt(len[l][i], 0);
-					gfx_SetTextXY(g[i+1]+3, 10);
-					gfx_PrintUInt(len[r][i], 0);
-				}
-				gfx_SetColor(black);
-				gfx_FillRectangle(0, g[top[l]]-2, 80, 4);
-				gfx_SetTextXY(84, g[top[l]]-4);
-				gfx_PrintUInt(top[l], 1);
-				gfx_FillRectangle(g[top[r]]-2, 0, 4, 80);
-				gfx_SetTextXY(g[top[r]]-4, 84);
-				gfx_PrintUInt(top[r], 1);
-				gfx_SetColor(firstcolor+9);
-				if (clearstate) {
-					gfx_FillRectangle(0, g[top_piece]-2, 80, 4);
-					gfx_SetTextXY(84, g[top_piece]-4);
-					gfx_PrintUInt(top_piece, 1);
-				} else {
-					gfx_FillRectangle(g[top_piece]-2, 0, 4, 80);
-					gfx_SetTextXY(g[top_piece]-4, 84);
-					gfx_PrintUInt(top_piece, 1);
-				}
-				gfx_SetTextConfig(gfx_text_noclip);
-			#endif
 
 			if (in_menu) {
 				//title
@@ -479,7 +450,41 @@ int main(void) {
 					gfx_PrintString(str_quit);
 				}
 			}
-			else if (lose) {gfx_FillRectangle_NoClip(40, 40, 160, 160);}
+			else { //in game
+				#ifdef debug
+					gfx_SetTextConfig(gfx_text_clip);
+					for (uint24_t i = 0; i < board; i++) {
+						gfx_SetTextXY(0, g[i+1]+3);
+						gfx_PrintUInt(color[l][i], 0);
+						gfx_SetTextXY(g[i+1]+3, 0);
+						gfx_PrintUInt(color[r][i], 0);
+						gfx_SetTextXY(18, g[i+1]+3);
+						gfx_PrintUInt(len[l][i], 0);
+						gfx_SetTextXY(g[i+1]+3, 10);
+						gfx_PrintUInt(len[r][i], 0);
+					}
+					gfx_SetColor(black);
+					gfx_FillRectangle(0, g[top[l]]-2, 80, 4);
+					gfx_SetTextXY(84, g[top[l]]-4);
+					gfx_PrintUInt(top[l], 1);
+					gfx_FillRectangle(g[top[r]]-2, 0, 4, 80);
+					gfx_SetTextXY(g[top[r]]-4, 84);
+					gfx_PrintUInt(top[r], 1);
+					gfx_SetColor(firstcolor+9);
+					if (clearstate) {
+						gfx_FillRectangle(0, g[top_piece]-2, 80, 4);
+						gfx_SetTextXY(84, g[top_piece]-4);
+						gfx_PrintUInt(top_piece, 1);
+					} else {
+						gfx_FillRectangle(g[top_piece]-2, 0, 4, 80);
+						gfx_SetTextXY(g[top_piece]-4, 84);
+						gfx_PrintUInt(top_piece, 1);
+					}
+					gfx_SetTextConfig(gfx_text_noclip);
+				#endif
+
+				if (lose) {gfx_FillRectangle_NoClip(40, 40, 160, 160);}
+			}
 		}
 		if (updsdbar > 0) {
 			updsdbar--;
