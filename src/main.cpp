@@ -14,6 +14,7 @@ turbowarp version for the first time and just rolled with it.
 //save file?
 //scores?
 //double c_stored?
+//double next?
 //color menu??
 
 #include <stdint.h>
@@ -95,7 +96,7 @@ else if (dec) {if ((var) > (bottom)) {(var)--;} else {(var) = (top);} u();}
 #define board_lower 6
 #define board_upper 24
 #define colors_lower 3
-#define colors_upper 10
+#define colors_upper 12
 
 #define str_title "pillsrs"
 #define str_play "Play"
@@ -256,16 +257,18 @@ int main(void) {
 		gfx_palette[1]  = c1555(0,  0,  0 ); //always black
 		gfx_palette[2]  = 0;                 //transparent
 		gfx_palette[3]  = gfx_palette[white]; //flicker
-		gfx_palette[4]  = c1555(31, 0,  0 ); //c0 (red)
-		gfx_palette[5]  = c1555(0,  0,  31); //c1 (blue)
-		gfx_palette[6]  = c1555(0,  63, 0 ); //c2 (green)
-		gfx_palette[7]  = c1555(31, 63, 0 ); //c3 (yellow)
-		gfx_palette[8]  = c1555(0,  63, 31); //c4 (cyan)
-		gfx_palette[9]  = c1555(31, 0,  31); //c5 (magenta)
-		gfx_palette[10] = c1555(31, 31, 0 ); //c6 (orange)
-		gfx_palette[11] = c1555(23, 0,  31); //c7 (purple)
-		gfx_palette[12] = c1555(15, 31, 15); //c8 (grey)
-		gfx_palette[13] = c1555(31, 0,  15); //c9 (amaranth) (my favorite :3)
+		gfx_palette[4]  = c1555(31, 0,  0 ); //c0  (red)
+		gfx_palette[5]  = c1555(0,  0,  31); //c1  (blue)
+		gfx_palette[6]  = c1555(0,  63, 0 ); //c2  (lime)
+		gfx_palette[7]  = c1555(31, 63, 0 ); //c3  (yellow)
+		gfx_palette[8]  = c1555(0,  63, 31); //c4  (cyan)
+		gfx_palette[9]  = c1555(31, 0,  31); //c5  (magenta)
+		gfx_palette[10] = c1555(31, 31, 0 ); //c6  (orange)
+		gfx_palette[11] = c1555(23, 0,  31); //c7  (purple)
+		gfx_palette[12] = c1555(15, 31, 15); //c8  (grey)
+		gfx_palette[13] = c1555(31, 0,  15); //c9  (amaranth) (my favorite :3)
+		gfx_palette[14] = c1555(15, 0,  0 ); //c10 (maroon)
+		gfx_palette[15] = c1555(0,  31, 0 ); //c11 (dark green)
 	}
 	
 	//loop
