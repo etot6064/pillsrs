@@ -42,29 +42,30 @@ the least significant bit of the green channel??
 ((uint16_t)( (((g) & 0b1) << 15) | ((r) << 10) | (((g) & 0b111110) << 4) | (b) ))
 
 /* increase/decrease a variable based on two conditions, with limits.
-also invokes a screen update.
+also optionally runs a function if the variable is changed.
 @param var variable to use
 @param top upper limit
 @param bottom lower limit
 @param inc increase if true
 @param dec decrease if true
+@param success function(s) run if variable changed. include semicolon
 */
-#define updown(var, top, bottom, inc, dec) \
-if ((inc) && ((var) < (top))) {(var)++; u();} \
-else if ((dec) && ((var) > (bottom))) {(var)--; u();}
+#define updown(var, top, bottom, inc, dec, success) \
+if ((inc) && ((var) < (top))) {(var)++; success} \
+else if ((dec) && ((var) > (bottom))) {(var)--; success}
 /* increase/decrease a variable based on two conditions, with overflow.
-also invokes a screen update.
+also optionally runs a function if the variable is changed.
 @param var variable to use
 @param top max value before loopover
 @param bottom min value before loopunder
 @param inc increase if true
 @param dec decrease if true
+@param success function(s) run if variable changed. include semicolon
 */
-#define updown_loop(var, top, bottom, inc, dec) \
-if (inc) {if ((var) < (top)) {(var)++;} else {(var) = (bottom);} u();} \
-else if (dec) {if ((var) > (bottom)) {(var)--;} else {(var) = (top);} u();}
+#define updown_loop(var, top, bottom, inc, dec, success) \
+if (inc) {if ((var) < (top)) {(var)++;} else {(var) = (bottom);} success} \
+else if (dec) {if ((var) > (bottom)) {(var)--;} else {(var) = (top);} success}
 
-#define u() updscr = true
 #define g gridpos
 #define c(i) (firstcolor + (i))
 #define c_rand (firstcolor + randInt(0, colors - 1))
@@ -192,7 +193,7 @@ void switchto_menu() {
 	gfx_palette[flicker]  = gfx_palette[white];
 	sclgrid(menu_board);
 	setboard_menu();
-	u();
+	updscr = true;
 }
 void switchto_game() {
 	timer_Disable(2);
@@ -206,7 +207,7 @@ void switchto_game() {
 	c_stored = c_rand;
 	sclgrid(board);
 	setboard_clear();
-	u();
+	updscr = true;
 }
 
 void anim() {
@@ -233,7 +234,7 @@ void placed(bool a) {
 		clearstate = a;
 	}
 	if(top[a] == board && color[a][board-1] != flicker) {lose = true;}
-	u();
+	updscr = true;
 }
 
 //flag!- main
@@ -304,16 +305,16 @@ int main(void) {
 			}
 			
 			if (kclear) {quit = true;}
-			else updown_loop(menu_selection, 3, 0, ddown, dup)
+			else updown_loop(menu_selection, 3, 0, ddown, dup, updscr = true;)
 			else switch (menu_selection) {
 				case 0: { //play
 					if (k2nd || kenter || kright) {switchto_game();}
 				break;}
 				case 1: { //board
-					updown(board, board_upper, board_lower, dright, dleft)
+					updown(board, board_upper, board_lower, dright, dleft, updscr = true;)
 				break;}
 				case 2: { //colors
-					updown(colors, colors_upper, colors_lower, dright, dleft)
+					updown(colors, colors_upper, colors_lower, dright, dleft, updscr = true;)
 				break;}
 				case 3: { //quit
 					if (k2nd || kenter || kright) {quit = true;}
@@ -329,7 +330,7 @@ int main(void) {
 				uint24_t c_temp = c_stored;
 				c_stored = c_current;
 				c_current = c_temp;
-				u();
+				updscr = true;
 			}
 			else if (kright && !animstate) {placed(r);}
 			else if (kleft && !animstate) {placed(l);}
@@ -378,7 +379,7 @@ int main(void) {
 				anim();
 			}
 			if(top[a] == 0 && top[b] == 0) {anim();}
-			u();
+			updscr = true;
 		}
 
 		//flag!- display
