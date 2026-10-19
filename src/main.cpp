@@ -27,10 +27,10 @@ turbowarp version for the first time and just rolled with it.
 #include <sys/util.h>
 #include <sys/rtc.h>
 
+
 //flag!- defines
 
-//#define debug
-
+//functions
 /* correctly converts rgb values into ti's weird 1555 format.
 seriously, why is the most significant bit of the whole color
 the least significant bit of the green channel??
@@ -40,7 +40,6 @@ the least significant bit of the green channel??
 */
 #define c1555(r, g, b) \
 ((uint16_t)( (((g) & 0b1) << 15) | ((r) << 10) | (((g) & 0b111110) << 4) | (b) ))
-
 /* increase/decrease a variable based on two conditions, with limits.
 also optionally runs a function if the variable is changed.
 @param var variable to use
@@ -66,10 +65,14 @@ also optionally runs a function if the variable is changed.
 if (inc) {if ((var) < (top)) {(var)++;} else {(var) = (bottom);} success} \
 else if (dec) {if ((var) > (bottom)) {(var)--;} else {(var) = (top);} success}
 
+//shortcuts
 #define g gridpos
 #define c(i) (firstcolor + (i))
 #define c_rand (firstcolor + randInt(0, colors - 1))
+#define l 0
+#define r 1
 
+//keys
 #define k2nd (kpress[1] & kb_2nd)
 #define kclear (kpress[6] & kb_Clear)
 #define kenter (kpress[6] & kb_Enter)
@@ -82,23 +85,28 @@ else if (dec) {if ((var) > (bottom)) {(var)--;} else {(var) = (top);} success}
 #define dleft (kdir & kb_Left)
 #define dright (kdir & kb_Right)
 
-#define l 0
-#define r 1
+//palette
 #define white 0 //palette index
 #define black 1 //palette index
 #define transparent 2 //palette index
 #define flicker 3 //palette index
 #define firstcolor 4 //palette index
+
+//settings
 #define rpt_init 11469 //32768hz * 350ms
 #define rpt_delay 2458 //32768hz * 75ms
 #define anim_speed 2621 //32768hz * 80ms
 #define anim_count 8
 #define menu_board 12
+//#define debug
+
+//limits
 #define board_lower 6
 #define board_upper 24
 #define colors_lower 3
 #define colors_upper 12
 
+//strings
 #define str_title "pillsrs"
 #define str_play "Play"
 #define str_board "Grid size: "
@@ -110,9 +118,25 @@ else if (dec) {if ((var) > (bottom)) {(var)--;} else {(var) = (top);} success}
 #define str_limit_left "   "
 #define str_limit_right ""
 
-//flag!- variables
-static uint8_t title_x[] = {3, 6, 6, 6, 3, 3, 3};
 
+//flag!- variables
+
+//keys
+uint8_t kprev[8] = {0}; //previous kb_data
+uint8_t kpress[8] = {0}; //rising edge of kb_data
+uint8_t lastdir = 0b0; //kpress[7] at time of last rising edge
+uint8_t kdir = 0b0; //kpress[7] with repeat
+bool quit = false;
+
+//control
+uint8_t gridpos[board_upper+1] = {0}; //board position to screen position
+uint8_t updboard = 2;
+uint8_t updsdbar = 2; //sidebar
+bool draw = false;
+bool in_menu = true;
+bool lose = false;
+
+//menu
 static uint8_t menu_len[2][menu_board] = {
 	{0, 0, 4, 6},
 	{0, 2, 2, 2, 3, 3, 4}
@@ -122,35 +146,28 @@ static uint8_t menu_color[2][menu_board] = {
 	{c(4), c(5), c(6), c(7), c(8), c(9), c(1)}
 };
 static uint8_t menu_top[2] = {4, 7};
+static uint8_t title_x[] = {3, 6, 6, 6, 3, 3, 3};
+uint8_t menu_selection = 0;
 
+//game
 uint8_t len[2][board_upper] = {{0}};
 uint8_t color[2][board_upper] = {{0}};
 uint8_t top[2] = {0};
-
-uint8_t gridpos[board_upper+1] = {0}; //board position to screen position
-uint8_t kprev[8] = {0}; //previous kb_data
-uint8_t kpress[8] = {0}; //rising edge of kb_data
-uint8_t lastdir = 0b0; //kpress[7] at time of last rising edge
-uint8_t kdir = 0b0; //kpress[7] with repeat
-uint8_t menu_selection = 0;
-uint8_t board = 16;
+uint8_t board = 12;
 uint8_t colors = 8;
 uint8_t c_next = 0;
 uint8_t c_current = 0;
 uint8_t c_stored = 0;
+
+//clear logic
 uint8_t c_match;
-uint8_t animstate = 0;
 uint8_t top_piece = 0;
-uint8_t updboard = 2;
-uint8_t updsdbar = 2; //sidebar
-bool swapdraw = false;
-bool animflip = false;
-bool clearstate = 0;
+uint8_t animstate = 0;
 bool clearcheck = false;
+bool clearside = false;
 bool can_match = false;
-bool lose = false;
-bool in_menu = true;
-bool quit = false;
+bool animflip = false;
+
 
 //flag!- functions
 void sclgrid(uint24_t n) {
@@ -235,7 +252,7 @@ void placed(bool a) {
 			color[b][top_piece-1] = flicker; top_piece--;
 		}
 		anim();
-		clearstate = a;
+		clearside = a;
 	}
 	if(top[a] == board && color[a][board-1] != flicker) {lose = true;}
 	updboard = 2;
@@ -278,7 +295,7 @@ int main(void) {
 			gfx_palette[15] = c1555(0,  31, 0 ); //c11 (dark green)
 		}
 	}
-	
+
 	//loop
 	while (true) {
 		kb_Scan();
@@ -287,7 +304,7 @@ int main(void) {
 			kpress[i] = ~kprev[i] & kb_Data[i];
 			kprev[i] = kb_Data[i];
 		}
-		
+
 		//flag!- buttons
 		if (in_menu) {
 			{ //repeat logic
@@ -358,7 +375,7 @@ int main(void) {
 		if (clearcheck) {
 			clearcheck = false;
 			bool a, b;
-			if (clearstate) {a = r, b = l;} else {a = l, b = r;} 
+			if (clearside) {a = r, b = l;} else {a = l, b = r;} 
 			top[b] = top_piece;
 			if (top_piece > 0) {
 				can_match = true;
@@ -392,7 +409,7 @@ int main(void) {
 		//flag!- display
 		if (updboard > 0) {
 			updboard--;
-			swapdraw = true;
+			draw = true;
 			drawboard();
 
 			if (in_menu) {
@@ -471,7 +488,7 @@ int main(void) {
 					gfx_SetTextXY(g[top[r]]-4, 84);
 					gfx_PrintUInt(top[r], 1);
 					gfx_SetColor(firstcolor+9);
-					if (clearstate) {
+					if (clearside) {
 						gfx_FillRectangle(0, g[top_piece]-2, 80, 4);
 						gfx_SetTextXY(84, g[top_piece]-4);
 						gfx_PrintUInt(top_piece, 1);
@@ -488,7 +505,7 @@ int main(void) {
 		}
 		if (updsdbar > 0) {
 			updsdbar--;
-			swapdraw = true;
+			draw = true;
 			gfx_SetColor(black);
 			gfx_FillRectangle_NoClip(240, 0, 4, 240);
 
@@ -501,8 +518,8 @@ int main(void) {
 				gfx_FillRectangle_NoClip(244, 160, 76, 80);
 			}
 		}
-		if (swapdraw) {
-			swapdraw = false;
+		if (draw) {
+			draw = false;
 			gfx_SwapDraw();
 		}
 	}
@@ -512,4 +529,4 @@ int main(void) {
 	kb_Reset();
 	timer_Disable(2);
 	return 0;
-}  
+}
