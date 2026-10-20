@@ -6,6 +6,9 @@ turbowarp version for the first time and just rolled with it.
 */
 
 //todo
+//paletteize game color slots
+//enum the palette
+//base draw layer
 //clean up menu
 //clean up failure
 //ingame sidebar
@@ -158,6 +161,9 @@ uint8_t colors = 8;
 uint8_t c_next = 0;
 uint8_t c_current = 0;
 uint8_t c_stored = 0;
+uint24_t score = 0;
+uint24_t tempscore = 0;
+uint8_t combo = 1;
 
 //clear logic
 uint8_t c_match;
@@ -225,6 +231,7 @@ void switchto_game() {
 	c_next = c_rand;
 	c_current = c_rand;
 	c_stored = c_rand;
+	score = 0;
 	sclgrid(board);
 	setboard_clear();
 	updboard = 2;
@@ -238,6 +245,8 @@ void anim() {
 	timer_Enable(2, TIMER_32K, TIMER_0INT, TIMER_DOWN);
 }
 void placed(bool a) {
+	combo = 1;
+	tempscore = 0;
 	bool b = !a;
 	len[a][top[a]] = top[b];
 	color[a][top[a]] = c_current;
@@ -248,16 +257,21 @@ void placed(bool a) {
 		c_match = color[a][top[a]-1];
 		color[a][top[a]-1] = flicker;
 		top_piece = top[b];
+		tempscore++;
 		while (top_piece > 0 && color[b][top_piece-1] == c_match) {
-			color[b][top_piece-1] = flicker; top_piece--;
+			color[b][top_piece-1] = flicker;
+			top_piece--;
+			tempscore++;
 		}
 		anim();
 		clearside = a;
+		score += tempscore;
 	}
 	if(top[a] == board && color[a][board-1] != flicker) {lose = true;}
 	updboard = 2;
 	updsdbar = 2;
 }
+
 
 //flag!- main
 int main(void) {
@@ -374,6 +388,7 @@ int main(void) {
 		}
 		if (clearcheck) {
 			clearcheck = false;
+			tempscore = 0;
 			bool a, b;
 			if (clearside) {a = r, b = l;} else {a = l, b = r;} 
 			top[b] = top_piece;
@@ -387,6 +402,7 @@ int main(void) {
 					if(can_match && color[a][read] == c_match) {
 						color[a][write] = flicker;
 						clearcheck = true;
+						tempscore++;
 					} else {
 						color[a][write] = color[a][read];
 					}
@@ -398,12 +414,18 @@ int main(void) {
 			if (clearcheck == true) {
 				clearcheck = false;
 				while (top_piece > 0 && color[b][top_piece-1] == c_match) {
-					color[b][top_piece-1] = flicker; top_piece--;
+					color[b][top_piece-1] = flicker;
+					top_piece--;
+					tempscore++;
 				}
 				anim();
+				combo++;
+				tempscore *= combo;
+				score += tempscore;
 			}
 			if(top[a] == 0 && top[b] == 0) {anim();}
 			updboard = 2;
+			updsdbar = 2;
 		}
 
 		//flag!- display
@@ -516,6 +538,16 @@ int main(void) {
 				gfx_FillRectangle_NoClip(244, 40, 76, 120);
 				gfx_SetColor(c_stored);
 				gfx_FillRectangle_NoClip(244, 160, 76, 80);
+
+				gfx_SetTextXY(246, 230);
+				gfx_PrintUInt(score, 0);
+				gfx_PrintChar('0');
+				if(tempscore) {
+					gfx_SetTextXY(246, 220);
+					gfx_PrintChar('+');
+					gfx_PrintUInt(tempscore, 0);
+					gfx_PrintChar('0');
+				}
 			}
 		}
 		if (draw) {
